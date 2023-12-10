@@ -1,14 +1,15 @@
-package org.example;
+package org.example.TCP;
 
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
-public class EOClient {
+public class EOClient implements Runnable {
+
+    public static int port = 10007;
 
     public static void main(String[] args) throws IOException {
-        String serverHostname = args.length > 0 ? args[0] : "127.0.0.1";
-        int port = 10007;
+        String serverHostname = args.length > 0 ? args[0] : "localhost";
         Socket echoSocket = null;
         PrintWriter out = null;
         BufferedReader in = null;
@@ -44,4 +45,8 @@ public class EOClient {
         echoSocket.close();
     }
 
+    @Override
+    public void run() {
+
+    }
 }

@@ -1,9 +1,12 @@
-package org.example;
+package org.example.TCP;
 
 import java.net.*;
 import java.io.*;
 
-public class EOServer {
+public class EOServer implements Runnable {
+
+    public static int port = 10007;
+    public static int capacity = 4;
 
     public static File getFileFromResources(String fileName) {
         URL url = EOServer.class.getClassLoader().getResource(fileName);
@@ -27,7 +30,6 @@ public class EOServer {
     }
 
     public static String getName(String emailAddress) throws IOException {
-        // assert the database has no repeat keys, which if it did wouldn't make sense.
         FileReader fileReader = new FileReader(getFileFromResources("database.txt"));
         BufferedReader bufferedReader = new BufferedReader(fileReader);
 
@@ -35,8 +37,8 @@ public class EOServer {
         String returnVal = null;
 
         while((currentLine = bufferedReader.readLine()) != null) {
-            String curAddress = currentLine.substring(0, currentLine.indexOf('='));
-            if (curAddress.equals(emailAddress)) {
+            String curAddress = currentLine.substring(0, currentLine.indexOf('=')).toLowerCase();
+            if (curAddress.equals(emailAddress.toLowerCase())) {
                 returnVal = currentLine.substring(currentLine.indexOf('=') + 1);
                 break;
             }
@@ -49,25 +51,21 @@ public class EOServer {
     }
 
     public static void main(String[] args) throws IOException {
-        int port = 10007;
         ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(port);
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
             System.err.println("Could not listen on port: " + port + ".");
             System.exit(1);
         }
 
         Socket clientSocket = null;
         System.out.println("Waiting for connection.....");
-
         try {
             clientSocket = serverSocket.accept();
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
             System.err.println("Accept failed.");
             System.exit(1);
         }
@@ -90,5 +88,10 @@ public class EOServer {
         in.close();
         clientSocket.close();
         serverSocket.close();
+    }
+
+    @Override
+    public void run() {
+
     }
 }
