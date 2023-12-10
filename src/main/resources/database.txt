@@ -1,0 +1,3 @@
+jyork9297@westfield.ma.edu=Jacob York
+johnsmith@gmail.com=John Smith
+jacobvincentyork@gmail.com=Jacob York

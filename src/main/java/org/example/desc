@@ -1,0 +1,13 @@
+input to server (query):
+    query message w/ an email address
+
+output to client:
+    full name associated
+
+
+
+I'm starting with the Example clients and servers as templates.
+There are a few things I need to get out of the way in the beginning:
+    > I need to write a getName() method on the server-side, which takes an email address string as input and outputs the
+      associated name according to database.txt.
+    > I need support for multiple clients.
