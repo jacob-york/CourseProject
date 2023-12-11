@@ -10,10 +10,12 @@ public class ConnectionManager implements Runnable {
     private BufferedReader in;
     private PrintWriter out;
     private boolean closed;
+    public boolean userQuit;
 
     public ConnectionManager(Socket client) {
         this.clientSocket = client;
         closed = false;
+        userQuit = false;
     }
 
     public boolean isClosed() {
@@ -24,13 +26,19 @@ public class ConnectionManager implements Runnable {
         out.println(message);
     }
 
+    public void printToConsole(String msg) {
+        System.out.println("connection-manager> " + msg);
+    }
+
     public void close() {
         try {
             if (!clientSocket.isOutputShutdown()) out.close();
             if (!clientSocket.isInputShutdown()) in.close();
             if (!clientSocket.isClosed()) clientSocket.close();
+            printToConsole(clientSocket.getRemoteSocketAddress() + " disconnected.");
+
         } catch (IOException e) {
-            System.out.println("unexpected error when closing IO sockets.");
+            printToConsole("Unexpected error when closing IO sockets.");
             System.exit(1);
         }
         closed = true;
@@ -43,14 +51,16 @@ public class ConnectionManager implements Runnable {
             System.exit(1);
         }
 
-        return closeOnException(
+        return exitOnException(
                 () -> new File(fileURL.toURI()),
                 "Unexpected error: database cannot be converted to URI."
         );
     }
 
+
     private String getName(String emailAddress) throws IOException {
-        FileReader fileReader = new FileReader(getFileFromResources("database.txt"));
+        File file = getFileFromResources("database.txt");
+        FileReader fileReader = new FileReader(file);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
 
         String currentLine;
@@ -70,44 +80,38 @@ public class ConnectionManager implements Runnable {
         return returnVal;
     }
 
-    private <R> R closeOnException(Callable<R> callable, String errorMsg) {
+    private <R> R exitOnException(Callable<R> callable, String errorMsg) {
         R returnVal = null;
         try {
             returnVal = callable.call();
         } catch (Exception e) {
-            System.out.println(errorMsg);
-            close();
+            printToConsole(errorMsg);
+            System.exit(1);
         }
         return returnVal;
     }
 
     @Override
     public void run() {
-        System.out.printf("Waiting for input from %s...\n", clientSocket.getRemoteSocketAddress());
+        printToConsole(String.format("Waiting for input from " + clientSocket.getRemoteSocketAddress() + "..."));
 
-        out = closeOnException(
-                () -> new PrintWriter(clientSocket.getOutputStream(), true),
-                "Unexpected error during print writer initialization."
-        );
-        in = closeOnException(
-                () -> new BufferedReader(new InputStreamReader(clientSocket.getInputStream())),
-                "Unexpected error during buffered reader initialization."
-        );
+        out = exitOnException(() -> new PrintWriter(clientSocket.getOutputStream(), true),
+                "Unexpected error during print writer initialization.");
+        in = exitOnException(() -> new BufferedReader(new InputStreamReader(clientSocket.getInputStream())),
+                "Unexpected error during buffered reader initialization.");
+        String inputLine = exitOnException(in::readLine, "Unexpected error when reading buffered reader.");
 
-        String inputLine = closeOnException(in::readLine, "Unexpected error when reading buffered reader");
         while (inputLine != null) {
-            System.out.printf("Message from %s: \"%s\".\n", clientSocket.getRemoteSocketAddress(), inputLine);
+            printToConsole("Message from " + clientSocket.getRemoteSocketAddress() +": \"" + inputLine + "\".");
             String finalInputLine = inputLine;
-            String name = closeOnException(() -> getName(finalInputLine), "Error while reading name.");
+            String name = exitOnException(() -> getName(finalInputLine), "Error while reading name.");
 
             String response = (name == null) ?
-                    String.format("Email address %s is not in the database.", finalInputLine) :
-                    name;
+                    "Email address \"" + finalInputLine + "\" is not in the database." : name;
 
             sendMessage(response);
-            System.out.printf("Response: \"%s.\"\n", response);
-
-            inputLine = closeOnException(in::readLine, "Unexpected error when reading buffered reader");
+            printToConsole("Response: \"" + response + "\".");
+            inputLine = exitOnException(in::readLine, "Unexpected error when reading buffered reader");
         }
 
         close();
