@@ -1,6 +1,6 @@
 I implemented this with Maven, and wrote it so database.txt is in the resources folder.
 If you're using Maven, it just needs to go in there.
-The easiest way to do it I think would be to just clone this repo:
+The easiest way to do it I think would be to just clone this repo.
 However, if you really need to change it, then you'd need to change how ConnectionManager gets the database file in
 ```getFileFromResources()```.
 
